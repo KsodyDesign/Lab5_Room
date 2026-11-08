@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Lab5_Room</string>
+    <string name="title_screen">База данных Room (Заметки)</string>
+    <string name="hint_title">Заголовок заметки</string>
+    <string name="hint_content">Текст заметки</string>
+    <string name="btn_add">Добавить</string>
+    <string name="btn_update">Обновить</string>
+    <string name="btn_delete">Удалить</string>
+    <string name="btn_clear">Сброс</string>
+    <string name="label_notes_list">Список заметок (Room + LiveData):</string>
+</resources>
