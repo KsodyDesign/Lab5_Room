@@ -11,11 +11,10 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
 
     private lateinit var tvMode: TextView
     private lateinit var etTitle: EditText
@@ -32,6 +31,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: NotesAdapter
 
     private var selectedNote: Note? = null
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        selectedNote?.id?.let { outState.putInt("selected_id", it) }
+        outState.putString("edit_title", etTitle.text.toString())
+        outState.putString("edit_content", etContent.text.toString())
+        super.onSaveInstanceState(outState)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +60,17 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
+
+        viewModel.busy.observe(this) { busy ->
+            listOf(btnAdd, btnUpdate, btnDelete, btnCancel).forEach { it.isEnabled = !busy }
+        }
+        viewModel.result.observe(this) { result ->
+            if (result != null) {
+                Toast.makeText(this, result.second, Toast.LENGTH_LONG).show()
+                if (result.first) switchToCreateMode()
+                viewModel.clearResult()
+            }
+        }
 
         // Подписка на LiveData из ViewModel
         viewModel.allNotes.observe(this) { notes ->
@@ -81,8 +98,7 @@ class MainActivity : AppCompatActivity() {
 
             val newNote = Note(title = title, content = content)
             viewModel.insert(newNote)
-            Toast.makeText(this, "Заметка сохранена в Room!", Toast.LENGTH_SHORT).show()
-            switchToCreateMode()
+
         }
 
         // Обновление выбранной заметки
@@ -104,8 +120,7 @@ class MainActivity : AppCompatActivity() {
                 timestamp = System.currentTimeMillis()
             )
             viewModel.update(updatedNote)
-            Toast.makeText(this, "Изменения сохранены в Room!", Toast.LENGTH_SHORT).show()
-            switchToCreateMode()
+
         }
 
         // Удаление выбранной заметки
@@ -115,8 +130,7 @@ class MainActivity : AppCompatActivity() {
             hideKeyboard()
 
             viewModel.delete(current)
-            Toast.makeText(this, "Заметка удалена из Room!", Toast.LENGTH_SHORT).show()
-            switchToCreateMode()
+
         }
 
         // Отмена режима редактирования
@@ -127,6 +141,14 @@ class MainActivity : AppCompatActivity() {
 
         // Первичный режим
         switchToCreateMode()
+        if (savedInstanceState?.containsKey("selected_id") == true) {
+            switchToEditMode(Note(
+                id = savedInstanceState.getInt("selected_id"),
+                title = savedInstanceState.getString("edit_title", ""),
+                content = savedInstanceState.getString("edit_content", ""),
+                timestamp = 0L
+            ))
+        }
     }
 
     private fun switchToCreateMode() {
